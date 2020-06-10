@@ -1,0 +1,810 @@
+
+
+
+/* 6/10/2020 12:02:24 PM */
+
+var _stry_cp = window.__stry_cp || {};
+_stry_cp.isFirstLoad = function() {
+    var isFirst = _stry_cp.firstLoad === undefined;
+    _stry_cp.firstLoad = false;
+    window.__stry_cp = _stry_cp;
+    return isFirst;
+};
+
+
+(function () {
+
+    if(!_stry_cp.isFirstLoad())
+        return;
+
+    var strya = {
+        pix : 'https://www.storeya.com/widgets/viewed?sid=8917F446',
+        ver : '202004',
+        apix : 'https://www.storeya.com/externalscript/analytics/8917F446'
+        };
+
+
+
+
+        var ismobile = navigator.userAgent.match(/(iPhone|iPod|BlackBerry|Android.*Mobile|BB10.*Mobile|webOS|Windows CE|IEMobile|Opera Mini|Opera Mobi|HTC|LG-|LGE|SAMSUNG|Samsung|SEC-SGH|Symbian|Nokia|PlayStation|PLAYSTATION|Nintendo DSi)/i);
+
+        var isSafari = !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/);
+
+        if( /iPhone/i.test(navigator.userAgent) ) {
+        var isIphone = true;
+        } else {
+        var isIphone = false;
+        }
+
+
+
+        // just for debugging !!!
+        //var ismobile = true;
+        //var isSafari = true;
+        //var isIphone = true;
+
+
+
+        var couponCodeAlreadyShown = "";
+        var tabenabled = true;
+
+
+        // Localize jQuery variable
+        var jQuery;
+
+        // load jQuery
+        if (window.jQuery === undefined || window.jQuery.fn.jquery !== '1.8.1') {
+        var script_tag = document.createElement('script');
+        script_tag.setAttribute("type", "text/javascript");
+        script_tag.setAttribute("src", "https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js");
+        if (script_tag.readyState) {
+        script_tag.onreadystatechange = function () { // For old versions of IE
+        if (this.readyState == 'complete' || this.readyState == 'loaded') {
+        scriptLoadHandler();
+        }
+        };
+        } else {
+        script_tag.onload = scriptLoadHandler;
+        }
+        // find head
+        (document.getElementsByTagName("head")[0] || document.documentElement).appendChild(script_tag);
+        } else {
+        jQuery = window.jQuery;
+        main();
+        }
+
+        // on jquery loaded
+        function scriptLoadHandler() {
+        // restore $ and window.jQuery to their previous values
+        jQuery = window.jQuery.noConflict(true);
+
+        // call main function
+
+
+        main();
+
+        twik();
+
+        }
+
+
+        function main(){
+
+
+
+
+        jQuery(document).ready(function ($) {
+
+
+        if (isIphone && ismobile) {
+        //$('head').append('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
+
+        }
+
+
+
+        // load css files
+        var domain = 'https://www.storeya.com';
+        var link = "https://s3.amazonaws.com/strystatic/common/css/widgets/share-coupon.css?v=12" + strya.ver;
+        var css_link = $("<link>", { rel: "stylesheet", type: "text/css", href: link });
+
+        // load toolbar.css
+        css_link.appendTo('head');
+
+        //var link = domain + "/common/css/widgets/couponpop/template1/style.css?v=12" + strya.ver;
+        //var css_link = $("<link>", { rel: "stylesheet", type: "text/css", href: link });
+
+        // load toolbar.css
+        //css_link.appendTo('head');
+
+
+        var testcoupon = istest();
+        if (!testcoupon){
+        // normal mode
+        } else {
+        // test mode call all cps
+        name = "allcp1";
+        }
+
+
+        $.ajax({
+        url: "https://www.storeya.com/ExternalScript/cpdata/8917F446?callback=?",
+        dataType: 'jsonp',  //use jsonp data type in order to perform cross domain ajax
+        crossDomain: true,
+        data:{todo:"jsonp"},
+        cache: false,
+        jsonpCallback: 'jsonCallback',
+        success: function(json) {
+        parseJsonp(json);
+        },
+        error:function(jqXHR, textStatus, errorThrown){
+        //alert(errorThrown);
+        }
+        });
+
+        function parseJsonp (json){
+
+        //console.dir(json);
+
+        var numcps =  json.cps.length;
+        var abtesting = new Array();
+        var cpid = new Array();
+        var showcp = -1;
+
+        for (i = 0; i < numcps; i++) {
+        abtesting[i] = json.cps[i].abtesting;
+        cpid[i] = json.cps[i].cpid;
+        }
+
+        // get cp to show based on abtesting
+        var showab = checkABtesting (abtesting, cpid);
+
+
+        if (showab != ""){
+        //console.log ("a/b: "+ showab);
+        //var showcp = showab;
+        // search index of tab cp to show
+        for (ik = 0; ik < numcps; ik++) {
+        if (json.cps[ik].cpid == showab){
+        var conti = ik;
+        // check targetingrules
+        if (checktargetingrules (ik, json) == false){
+        showcp = ik;
+        }
+        }
+        }
+        } else {
+        //console.log ("no a/b");
+        // no result from abtesting. go through all cps and check which one should be shown
+        for (k = 0; k < numcps; k++) {
+        if (checktargetingrules (k, json) == false){
+        showcp = k;
+        break;
+        }
+        }
+        }
+
+
+
+        if (showcp != -1){
+
+        if (json.cps[showcp].customCss != "") {
+        $('head').append(json.cps[showcp].customCss);
+        }
+
+        var shownWithOpenAutomatically = readCookie('shownWithOpenAutomatically' + json.cps[showcp].cpid);
+
+
+        var couponAlreadyrecieved = readCookie('stry_cpalsn'+'8917F446');
+
+        var contentwidth = $("html").width();
+        if (ismobile && contentwidth > 799){
+        //scaled down mobile page
+        var mobilescaled = true;
+        } else {
+        var mobilescaled = false;
+        }
+
+        if ((!ismobile && json.cps[showcp].openAutomatically == 'true') || (ismobile && json.cps[showcp].openAutomaticallyMobile == 'true' )){
+        var openAutoAllDevices = true;
+        } else {
+        var openAutoAllDevices = false;
+        }
+
+
+        if (!ismobile){
+        var currentDelay = json.cps[showcp].opendelay;
+        } else {
+        var currentDelay = json.cps[showcp].opendelayMobile;
+        }
+
+
+        if (couponAlreadyrecieved == null && mobilescaled == false && shownWithOpenAutomatically == null && (couponCodeAlreadyShown == null || couponCodeAlreadyShown == '') && openAutoAllDevices) {
+
+        if (currentDelay == ""){
+        var opendelay = 0;
+        }
+
+        var opendelay = currentDelay *1000;
+
+        var myVar = setInterval(function(){myTimer()},opendelay);
+        function myTimer(){
+        buildPopup(json.cps[showcp].cpid, json.cps[showcp].template);
+
+        createCookie("shownWithOpenAutomatically" + json.cps[showcp].cpid, "true", 1);
+
+        updatePopupSize();
+        clearInterval(myVar);
+        }
+
+        //var shownWithOpenAutomatically = readCookie('shownWithOpenAutomatically' + json.cps[showcp].cpid);
+        }}
+
+
+        if (showcp == -1){
+        // no cp will be shwon (no a/b testing && hidden according to targeting rules)
+        tabenabled = false;
+        }
+
+
+        // open popup from link
+
+        $('[data-cp-link]').click(function () {
+        var thiscpid = $(this).attr("data-cp-link");
+
+        var numcps =  json.cps.length;
+        for (i = 0; i < numcps; i++) {
+        if (json.cps[i].cpid == thiscpid){
+        var thiscpidtemplate = json.cps[i].template;
+        }
+        }
+
+        // if popup exists show else build
+        if ($('div[data-cp-popup='+ thiscpid +']').length > 0){
+
+        $('div[data-cp-popup='+ thiscpid +']').show();
+        } else {
+        buildPopup(thiscpid, thiscpidtemplate);
+        }
+        updatePopupSize();
+        });
+
+        if (showcp != -1){
+        if ((ismobile) && (json.cps[showcp].showTabMobile == "false")){
+        //alert ("mobiel- dn't show tab");
+        tabenabled = false;
+        }
+        }
+
+
+        // force test
+        if (testcoupon != false){
+        for (i = 0; i < numcps; i++) {
+        if (json.cps[i].cpid == testcoupon){
+
+
+        showcp = i;
+        tabenabled = true;
+        break;}}
+        }
+
+
+
+        if (tabenabled){
+        buildTab(showcp,json);
+        if (mobilescaled) {
+        $('#share-coupon-small').addClass("mobile-scaled-down");
+        }
+        }
+        }
+
+
+
+        function buildTab(cpnum, json){
+        var tabimage = json.cps[cpnum].tabimage;
+        var CPID = json.cps[cpnum].cpid;
+        var sharecoupontext =  json.cps[cpnum].sharecoupontext;
+        var tabpoisiton = json.cps[cpnum].tabpoisiton;
+        var tabcolor = json.cps[cpnum].tabcolor;
+        var tabimage = json.cps[cpnum].tabimage;
+        var verticalposition = json.cps[cpnum].verticalposition;
+        var template = json.cps[cpnum].template;
+        if ($('#share-coupon-small').length != 0) {
+        //detach hard coded dom element if exists
+        $('#share-coupon-small').detach()
+        }
+
+        $(document.body).append('<div id="share-coupon-small" class="' + tabpoisiton + '" data-cp-tab="' + CPID + '" data-cp-template="'+ template + '"></div>');
+
+        $('#share-coupon-small').append('<div class="share-coupon-small-body">' + '<div id="tab-image" class="' + tabimage + '"></div>' + '<div class="scissors-small"></div><div class="dashes-d"></div><div class="dashes-b"></div><div class="share-coupon-small-wrapper">' + sharecoupontext + '</div></div></div>' + '<script async src="' + strya.apix + '"></script>');
+
+        if (ismobile) {
+        $('#share-coupon-small').addClass("mobile");
+        }
+
+
+
+        if (tabimage != "") {
+        // using custom image
+        $('#share-coupon-small').addClass("tab-image");
+        $('#share-coupon-small').append('<img src="' + tabimage + '" />');
+        } else {
+        $('#share-coupon-small').css("background-color", tabcolor);
+        }
+
+        if (verticalposition != "") {
+        if ((verticalposition > 90) && (tabimage != "")){
+        verticalposition = "88";
+        }
+
+        if (tabpoisiton == "left" || tabpoisiton == "right"){
+        var positionfrom = "top";
+        } else {
+        var positionfrom = "left";
+        }
+        $('head').append('<style> #share-coupon-small {'+ positionfrom +':' + verticalposition + '%; }</style>');
+            }
+
+        $('[data-cp-tab]').click(function () {
+        var thiscpid = $(this).attr("data-cp-tab");
+
+        //GA code
+        if (typeof(ga) != 'undefined') {
+        ga('send', 'pageview', 'couponpop_clicked');
+        }
+        //EO GA code
+
+        // if popup exists show else build
+        if ($('div[data-cp-popup='+ thiscpid +']').length > 0){
+
+        $('div[data-cp-popup='+ thiscpid +']').show();
+        if (isSafari && isIphone && ismobile) {
+        $("body").addClass("iphone");
+
+
+
+
+        }
+        } else {
+        if (!$(this).hasClass("mobile-scaled-down")){
+        buildPopup(thiscpid, template);
+        } else {
+        //link to mobile version
+        window.location.href = "https://www.storeya.com/widgets/couponpop?sid=8917F446&scaled=true";
+        }
+        }
+        updatePopupSize();
+        });
+        }
+
+        function buildPopup(CPID, templateID){
+        if (templateID == null){
+        templateID = "";
+        }
+        var cpurl = "https://www.storeya.com/widgets/couponpop?sid=8917F446";
+        var cPopElement =  '<div id="share-coupon-popup" data-cp-popup="' + CPID + '" data-cp-template="'+ templateID + '"><div id="share-coupon-popup-container"><div class="qa_header"><a id="share-couponpopup_close" data-close-popup="' + CPID + '"></a></div><iframe scrolling="auto" frameborder="0" src="' + cpurl + '&template=' + templateID +'&popID=' + CPID + '" id="share-coupon_frame"></iframe></div><div class="share-coupon-bk-screen" style="opacity:0.75;display:none;" data-close-popup="' + CPID + '"></div></div>';
+        $('body').prepend(cPopElement);
+
+        //console.log(cPopElement);
+        //$('body').prepend('<div id="share-coupon-popup" data-cp-popup="' + CPID + '" data-cp-template="'+ templateID + '"><div id="share-coupon-popup-container"><div class="qa_header"><a id="share-couponpopup_close" data-close-popup="' + CPID + '"></a></div><iframe scrolling="auto" frameborder="0" src="https://www.storeya.com/widgets/couponpop?sid=8917F446&template=' + templateID +'&popID=' + CPID + '" id="share-coupon_frame"></iframe></div><div class="share-coupon-bk-screen" style="opacity:0.75;display:none;" data-close-popup="' + CPID + '"></div></div>');
+
+        var IsWhiteLabel = 'False';
+        if (IsWhiteLabel=='False' && !ismobile)
+        {
+        $("#share-coupon-popup").append('<div class="powered-wrapper"><span class="powered">Powered by <a target="_blank" href="https://www.storeya.com?ref=98116&r=28&utm_source=cpop&utm_medium=bottom&utm_campaign=pw">StoreYa</a></span></div>');
+        }
+
+        $('.share-coupon-bk-screen').css('height', jQuery(document).height());
+        $('.share-coupon-bk-screen').fadeIn();
+        if (isSafari && isIphone && ismobile) {
+        $("body").addClass("iphone");
+        }
+
+        if (ismobile) {
+        $('#share-coupon-popup[data-cp-popup="' +  CPID + '"]').addClass("cp-mobile");
+        }
+
+        $('[data-close-popup]').click(function () {
+        //alert ("close cp:" + CPID);
+        $('div[data-cp-popup="' + $(this).attr("data-close-popup") + '"]').hide();
+        if (isSafari && isIphone && ismobile) {
+        $("body").removeClass("iphone");
+        }
+
+
+        });
+        }
+
+        function updatePopupSize(){
+        // update popup size
+        // Create IE + others compatible event handler
+        var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+        var eventer = window[eventMethod];
+        var messageEvent = eventMethod == "attachEvent" ? "onmessage" : "message";
+
+        // Listen to message from child window
+        eventer(messageEvent,function(e) {
+
+
+        var content = e.data;
+
+
+        if ((typeof content === 'string' || content instanceof String) && content.charAt(0) == "I" && $("body").hasClass("iphone")){
+        setTimeout(function () {
+
+        //console.log("scroll to input");
+
+        $('html, body').animate({
+        scrollTop: $("#share-coupon-popup-container").offset().top
+        }, 100);
+
+        //var x = document.getElementById('share-coupon-popup-container');
+        //x.scrollIntoView(true);
+
+        }, 1200);
+        }
+
+
+
+        if ((typeof content === 'string' || content instanceof String) && content.charAt(0) == "D"){
+        // change dimensions
+        content = content.substring(1);
+        var splits = content.split(",");
+
+        // if height was changed from the default (460px) don't resize
+        if ($("#share-coupon-popup-container").css("height") == "460px"){
+
+        if ($("#share-coupon-popup").attr("data-cp-template") != ""){
+        var isnewcp = true;
+        } else {
+        var isnewcp = false;
+        }
+
+
+
+        splits[1] = splits[1];
+        //alert ("recieved height - "  + splits[1]+ " cpid: " + splits[2]);
+        $('[data-cp-popup="' + splits[2] + '"] > #share-coupon-popup-container').css("height" , splits[1]);
+
+        if (isnewcp && !ismobile){
+        $('[data-cp-popup="' + splits[2] + '"] > #share-coupon-popup-container').css("width" , splits[0]);
+        }
+        var marginl = splits[0]/2;
+        var margint = splits[1]/2;
+        var margint = margint - (margint*2);
+        var marginl = marginl - (marginl*2);
+
+
+        $('[data-cp-popup="' + splits[2] + '"] > #share-coupon-popup-container').css("margin-top" , margint);
+
+        if (isnewcp && !ismobile){
+        $('[data-cp-popup="' + splits[2] + '"] > #share-coupon-popup-container').css("margin-left" , marginl);
+        }
+
+        $('[data-cp-popup="' + splits[2] + '"] > .powered-wrapper').css("bottom" , "initial");
+        $('[data-cp-popup="' + splits[2] + '"] > .powered-wrapper').css("top" , "50%");
+
+
+        var poweredbypos = - margint;
+        poweredbypos = poweredbypos + 15;
+        $('[data-cp-popup="' + splits[2] + '"] > .powered-wrapper').css("margin-top" , poweredbypos);
+
+        }
+        }
+        },false);
+
+        // eo update popup size
+        }
+        }); // eo ready
+        }
+
+        function checktargetingrules (cpnum, json){
+        var restrictcp = false;
+        var cpid = json.cps[cpnum].cpid;
+
+        var cpreferral = readCookie('stry_cpreferral');
+        if (cpreferral == null) {
+        cpreferral = getUserReferral();
+        createCookie("stry_cpreferral", cpreferral, 1);
+        }
+
+        var allTraffic = json.cps[cpnum].allTraffic;
+        var typeNew = json.cps[cpnum].typeNew;
+        var typeReturning = json.cps[cpnum].typeReturning;
+        var referralDirect =  json.cps[cpnum].referralDirect;
+        var referralPaid =  json.cps[cpnum].referralPaid;
+        var referralSearch =  json.cps[cpnum].referralSearch;
+        var referralSocial =  json.cps[cpnum].referralSocial;
+
+        if (allTraffic!="true"){
+        if (((cpreferral == "referralDirect") && (referralDirect!="true")) || ((cpreferral == "referralPaid") && (referralPaid!="true")) || ((cpreferral == "referralSearch") && (referralSearch!="true")) || ((cpreferral == "referralSocial")  && (referralSocial!="true"))) {
+        restrictcp = true;
+        }
+        }
+
+        //   cpusers check
+        var cpusers = readCookie('stry_cpusers');
+        if (cpusers == null) {
+        var d = new Date();
+        var m = new Date();
+        d = d.getDate();
+        m = m.getMonth();
+        var cpdate = d+""+m;
+
+        createCookie("stry_cpusers", cpdate , 14);
+        if (typeNew!= "true"){
+        restrictcp = true;
+        }
+        } else{
+        var cd = new Date();
+        var cm = new Date();
+        cd = cd.getDate();
+        cm = cm.getMonth();
+        var currentdate = cd+""+cm;
+
+        // check current date against cookie date
+        if ((typeNew!= "true") && (currentdate == cpusers)){
+        restrictcp = true;
+        }
+
+        // check current date against cookie date
+        if ((typeReturning!="true") && ((currentdate != cpusers))){
+        restrictcp = true;
+        }
+        }
+        //   EO cpusers
+
+        // check include/exclude
+        var skipresult = shouldSkip(cpnum, json);
+        if (skipresult){
+        restrictcp = true;
+        }
+        return (restrictcp);
+        }
+
+        function checkABtesting(abtesting, cpid){
+        if (abtesting.indexOf("true") != -1){
+        // if abtesting true
+        var abtestingresult = getAllIndexes(abtesting,"true");
+
+
+        //read cookie first if not random and write cookie
+        var abtestingalready = readCookie('stry_cpabtesting');
+        if (abtestingalready == null) {
+        // pick A or B or C
+
+        var abnumbers = abtestingresult.length;
+        var abtestmath = Math.floor(Math.random() * abnumbers) + 1;
+        var abresult = abtestingresult[abtestmath-1];
+        createCookie("stry_cpabtesting", cpid[abresult] , 1);
+        return (cpid[abresult]);
+        } else {
+        // cookie is not empty - show
+        return (abtestingalready);
+        }
+        } else {
+        //no ab testing
+        return false;
+
+        }
+        }
+
+        function istest(){
+        var hash = window.location.hash;
+        if (hash.indexOf("#test") > -1){
+        var cpid = hash.slice(5);
+
+        return (cpid);
+        } else {
+        return false;
+        }
+        }
+
+        //
+        //   global functions
+        //
+
+        function getAllIndexes(arr, val) {
+        var indexes = [], i;
+        for(i = 0; i < arr.length; i++)
+        if (arr[i] === val)
+        indexes.push(i);
+        return indexes;
+        }
+
+        function createCookie(name, value, days) {
+        if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        var expires = "; expires=" + date.toGMTString();
+        } else var expires = "";
+        document.cookie = name + "=" + value + expires + "; path=/;SameSite=None;secure";
+        }
+
+        function readCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+        }
+
+        function getUserReferral(){
+
+        var referralinfo = document.referrer;
+
+        var searchwords = /google|yahoo|bing|ask.com|aol/;
+        var socialwords = /facebook|twitter|linkedin|pinterest|plus.google|tumblr|instagram/;
+        var paywords = /gclid|paid/;
+        var checkurl = window.location.href
+        var referralWriteinfo = "";
+
+        if (referralinfo == ""){
+        referralWriteinfo = "referralDirect";
+        }
+
+        if (searchwords.test(referralinfo)){
+        referralWriteinfo = "referralSearch";
+        }
+
+        if (socialwords.test(referralinfo)){
+        referralWriteinfo = "referralSocial";
+        }
+
+        if (paywords.test(checkurl)){
+        referralWriteinfo = "referralPaid";
+        }
+
+        return referralWriteinfo;
+        }
+
+        var localNamespace = {};
+
+        function shouldSkip(cpid, json) {
+
+        if(json.cps[cpid].skipOn != "undefined" && json.cps[cpid].skipOn !=null && json.cps[cpid].skipOn !="")
+        {
+        var arrayOfSkipOn = json.cps[cpid].skipOn.split("|");
+
+        for (i = 0; i < arrayOfSkipOn.length; i++) {
+        if(arrayOfSkipOn[i]!= "undefined" && arrayOfSkipOn[i] != null && arrayOfSkipOn[i]!="")
+        {
+        var url = arrayOfSkipOn[i];
+
+        if(endsWith(url, "*"))
+        {
+        url=url.substring(0, url.length-1);  //url.replace("*", "");
+
+        if(endsWith(url, "/"))
+        {
+        url = url.substring(0, url.length-1);
+        }
+
+        if(location.href.indexOf(url) > -1)
+        return true;
+        }
+        else
+        {
+        if(endsWith(url, "/"))
+        {
+        url = url.substring(0, url.length-1);
+        }
+
+        var currentUrl = location.href;
+        if(endsWith(currentUrl, "/"))
+        {
+        currentUrl = currentUrl.substring(0, currentUrl.length-1);
+        }
+
+        url = AddHttpIfNeeded(url);
+        if(currentUrl.toLowerCase()==url.toLowerCase())
+        return true;
+        }
+        }
+        }
+        }
+
+        if(location.href.indexOf("checkout.shopify.com") > -1)
+        return true;
+        if(location.href.indexOf("/orders/") > -1)
+        return true;
+
+        if(json.cps[cpid].showOn != "undefined" && json.cps[cpid].showOn!= null && json.cps[cpid].showOn!= "")
+        {
+        var arrayOfShowOn = json.cps[cpid].showOn.split("|");
+
+        var result = true;
+        for (i = 0; i < arrayOfShowOn.length; i++) {
+        if(arrayOfShowOn[i]!= "undefined" && arrayOfShowOn[i] != null && arrayOfShowOn[i] !="")
+        {
+        var url = arrayOfShowOn[i];
+
+        if(endsWith(url, "*"))
+        {
+        url=url.substring(0, url.length-1);  //url.replace("*", "");
+
+        if(endsWith(url, "/"))
+        {
+        url = url.substring(0, url.length-1);
+        }
+
+        if(location.href.indexOf(url) > -1)
+        return false;
+        }
+        else
+        {
+        if(endsWith(url, "/"))
+        {
+        url = url.substring(0, url.length-1);
+        }
+
+        var currentUrl = location.href;
+        if(endsWith(currentUrl, "/"))
+        {
+        currentUrl = currentUrl.substring(0, currentUrl.length-1);
+        }
+
+        url = AddHttpIfNeeded(url);
+        if(currentUrl.toLowerCase()==url.toLowerCase())
+        return false;
+        }
+        }
+        }
+
+        return result;
+        }
+        }
+
+        function endsWith(str, suffix) {
+        var result = str.indexOf(suffix, str.length - suffix.length) !== -1;
+        return result;
+        }
+
+        function AddHttpIfNeeded(url)
+        {
+        if (url.indexOf('http://') != 0 && url.indexOf('https://'))
+        url = 'http://' + url;
+        return url;
+        }
+
+
+
+
+        function getUserReferral(){
+
+        var referralinfo = document.referrer;
+
+        var searchwords = /google|yahoo|bing|ask.com|aol/;
+        var socialwords = /facebook|twitter|linkedin|pinterest|plus.google|tumblr|instagram/;
+        var paywords = /gclid|paid/;
+        var checkurl = window.location.href
+        var referralWriteinfo = "";
+
+        if (referralinfo == ""){
+        referralWriteinfo = "referralDirect";
+        }
+
+        if (searchwords.test(referralinfo)){
+        referralWriteinfo = "referralSearch";
+        }
+
+        if (socialwords.test(referralinfo)){
+        referralWriteinfo = "referralSocial";
+        }
+
+        if (paywords.test(checkurl)){
+        referralWriteinfo = "referralPaid";
+        }
+
+        return referralWriteinfo;
+        }
+        })();
+
+        var twik = function()
+        {
+        
+        }
+
